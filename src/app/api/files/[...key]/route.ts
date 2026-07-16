@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { EXT_TO_MIME } from "~/lib/constants";
 import { db } from "~/server/db";
 import { storage } from "~/server/storage";
 
@@ -50,18 +49,10 @@ export async function GET(
     filenameBase = `${qp.subject.code}-${qp.exam.code}`;
   }
 
-  const file = await storage.get(key);
-  if (!file) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const signedUrl = await storage.createSignedDownloadUrl(
+    key,
+    isThumbnail ? undefined : `${sanitizeFilename(filenameBase)}.${ext}`,
+  );
 
-  return new NextResponse(file.stream, {
-    headers: {
-      "Content-Type": isThumbnail
-        ? "image/png"
-        : (EXT_TO_MIME[ext] ?? "application/octet-stream"),
-      "Content-Length": String(file.size),
-      "Content-Disposition": isThumbnail
-        ? `inline; filename="${sanitizeFilename(filenameBase)}.png"`
-        : `attachment; filename="${sanitizeFilename(filenameBase)}.${ext}"`,
-    },
-  });
+  return NextResponse.redirect(signedUrl);
 }

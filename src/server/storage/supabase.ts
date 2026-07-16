@@ -40,4 +40,14 @@ export const supabaseStorage: StorageDriver = {
     if (error) throw error;
     return { signedUrl: data.signedUrl, token: data.token };
   },
+
+  async createSignedDownloadUrl(key, filename) {
+    const { data, error } = await bucket.createSignedUrl(
+      key,
+      60,
+      filename ? { download: filename } : undefined,
+    );
+    if (error ?? !data) throw error ?? new Error("Failed to sign download URL");
+    return data.signedUrl;
+  },
 };

@@ -26,12 +26,6 @@ export const MIME_TO_EXT: Record<AllowedMimeType, string> = {
   "application/msword": "doc",
 };
 
-export const EXT_TO_MIME: Record<string, AllowedMimeType> = {
-  pdf: "application/pdf",
-  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  doc: "application/msword",
-};
-
 export const REGULATIONS = ["AU-21", "AU-25"] as const;
 export type Regulation = (typeof REGULATIONS)[number];
 

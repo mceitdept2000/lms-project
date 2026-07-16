@@ -26,7 +26,7 @@ export function DownloadLink({
       className={className}
       onClick={() => {
         setDownloading(true);
-        setTimeout(() => setDownloading(false), 1500);
+        setTimeout(() => setDownloading(false), 2500);
       }}
     >
       {downloading ? (
