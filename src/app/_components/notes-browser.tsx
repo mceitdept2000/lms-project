@@ -9,6 +9,7 @@ import { DataTable, type DataTableColumn } from "~/app/_components/data-table";
 import { FilterSelect } from "~/app/_components/filter-select";
 import { PaginationControls } from "~/app/_components/pagination-controls";
 import { SearchBar } from "~/app/_components/search-bar";
+import { DownloadLink } from "~/app/_components/ui/download-link";
 import { ViewToggle, type ViewMode } from "~/app/_components/view-toggle";
 import {
   DEFAULT_PAGE_SIZE,
@@ -63,12 +64,12 @@ function NoteCard({ note }: { note: NoteRow }) {
         <span>Unit {note.unit && note.unit !== "-1" ? note.unit : "All"}</span>
         <span>{new Date(note.createdAt).toLocaleDateString()}</span>
       </div>
-      <a
+      <DownloadLink
         className="border-accent text-primary hover:bg-primary/5 rounded-[8px] border px-3 py-2 text-center text-sm font-medium"
         href={`/api/files/${note.storagePath}`}
       >
         Download
-      </a>
+      </DownloadLink>
     </div>
   );
 }
@@ -131,12 +132,12 @@ export function NotesBrowser() {
     {
       header: "Download",
       cell: (row) => (
-        <a
+        <DownloadLink
           className="text-primary underline"
           href={`/api/files/${row.storagePath}`}
         >
           Download
-        </a>
+        </DownloadLink>
       ),
     },
   ];
