@@ -1,5 +1,6 @@
 "use client";
 
+import { FileQuestion } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { DataTable, type DataTableColumn } from "~/app/_components/data-table";
@@ -30,8 +31,9 @@ export function QuestionPapersBrowser() {
     searchParams.get("pageSize") ?? String(DEFAULT_PAGE_SIZE),
   );
 
-  const { data: exams } = api.exam.list.useQuery();
-  const { data: subjects } = api.subject.list.useQuery();
+  const { data: exams, isLoading: examsLoading } = api.exam.list.useQuery();
+  const { data: subjects, isLoading: subjectsLoading } =
+    api.subject.list.useQuery();
   const { data, isLoading } = api.questionPaper.list.useQuery({
     search: search || undefined,
     regulation: (regulation || undefined) as Regulation | undefined,
@@ -107,6 +109,8 @@ export function QuestionPapersBrowser() {
           value={examCode}
           onChange={(v) => setParams({ examCode: v })}
           options={(exams ?? []).map((e) => ({ value: e.code, label: e.code }))}
+          searchable
+          loading={examsLoading}
         />
         <FilterSelect
           label="Subject code"
@@ -116,14 +120,24 @@ export function QuestionPapersBrowser() {
             value: s.code,
             label: s.code,
           }))}
+          searchable
+          loading={subjectsLoading}
         />
       </div>
 
-      {isLoading ? (
-        <p className="text-sm">Loading...</p>
-      ) : (
-        <DataTable columns={columns} rows={data?.items ?? []} />
-      )}
+      <DataTable
+        columns={columns}
+        rows={data?.items ?? []}
+        isLoading={isLoading}
+        loadingLabel="Loading question papers..."
+        emptyIcon={FileQuestion}
+        emptyTitle="No question papers found"
+        emptyDescription={
+          search || regulation || examCode || subjectCode
+            ? "Try adjusting your search or filters."
+            : "Question papers uploaded by staff will appear here."
+        }
+      />
 
       {data && (
         <PaginationControls

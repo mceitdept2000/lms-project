@@ -1,5 +1,6 @@
 "use client";
 
+import { FileQuestion } from "lucide-react";
 import { useState } from "react";
 
 import { DataTable, type DataTableColumn } from "~/app/_components/data-table";
@@ -74,11 +75,15 @@ export function QuestionPaperManager() {
   return (
     <div className="flex flex-col gap-4">
       <h2 className="font-semibold">Question Papers</h2>
-      {isLoading ? (
-        <p className="text-sm">Loading...</p>
-      ) : (
-        <DataTable columns={columns} rows={data?.items ?? []} />
-      )}
+      <DataTable
+        columns={columns}
+        rows={data?.items ?? []}
+        isLoading={isLoading}
+        loadingLabel="Loading question papers..."
+        emptyIcon={FileQuestion}
+        emptyTitle="No question papers yet"
+        emptyDescription="Question papers you upload above will show up here."
+      />
       {data && (
         <PaginationControls
           page={data.page}

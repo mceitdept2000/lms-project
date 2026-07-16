@@ -1,3 +1,8 @@
+import type { LucideIcon } from "lucide-react";
+
+import { EmptyState } from "~/app/_components/ui/empty-state";
+import { LoadingState } from "~/app/_components/ui/loading-state";
+
 export interface DataTableColumn<T> {
   header: string;
   cell: (row: T) => React.ReactNode;
@@ -6,16 +11,20 @@ export interface DataTableColumn<T> {
 export function DataTable<T extends { id: string }>({
   columns,
   rows,
-  emptyMessage = "No results.",
+  isLoading = false,
+  loadingLabel = "Loading...",
+  emptyIcon,
+  emptyTitle = "No results",
+  emptyDescription,
 }: {
   columns: DataTableColumn<T>[];
   rows: T[];
-  emptyMessage?: string;
+  isLoading?: boolean;
+  loadingLabel?: string;
+  emptyIcon?: LucideIcon;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }) {
-  if (rows.length === 0) {
-    return <p className="text-sm">{emptyMessage}</p>;
-  }
-
   return (
     <table className="w-full text-left text-sm">
       <thead>
@@ -26,13 +35,31 @@ export function DataTable<T extends { id: string }>({
         </tr>
       </thead>
       <tbody>
-        {rows.map((row) => (
-          <tr key={row.id} data-row-id={row.id}>
-            {columns.map((col) => (
-              <td key={col.header}>{col.cell(row)}</td>
-            ))}
+        {isLoading ? (
+          <tr>
+            <td colSpan={columns.length}>
+              <LoadingState label={loadingLabel} />
+            </td>
           </tr>
-        ))}
+        ) : rows.length === 0 ? (
+          <tr>
+            <td colSpan={columns.length}>
+              <EmptyState
+                icon={emptyIcon}
+                title={emptyTitle}
+                description={emptyDescription}
+              />
+            </td>
+          </tr>
+        ) : (
+          rows.map((row) => (
+            <tr key={row.id} data-row-id={row.id}>
+              {columns.map((col) => (
+                <td key={col.header}>{col.cell(row)}</td>
+              ))}
+            </tr>
+          ))
+        )}
       </tbody>
     </table>
   );

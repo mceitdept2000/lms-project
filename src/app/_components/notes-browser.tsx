@@ -1,5 +1,6 @@
 "use client";
 
+import { FileText } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { DataTable, type DataTableColumn } from "~/app/_components/data-table";
@@ -32,7 +33,8 @@ export function NotesBrowser() {
     searchParams.get("pageSize") ?? String(DEFAULT_PAGE_SIZE),
   );
 
-  const { data: subjects } = api.subject.list.useQuery();
+  const { data: subjects, isLoading: subjectsLoading } =
+    api.subject.list.useQuery();
   const { data, isLoading } = api.note.list.useQuery({
     search: search || undefined,
     semester: (semester || undefined) as Semester | undefined,
@@ -121,14 +123,24 @@ export function NotesBrowser() {
             value: s.id,
             label: s.code,
           }))}
+          searchable
+          loading={subjectsLoading}
         />
       </div>
 
-      {isLoading ? (
-        <p className="text-sm">Loading...</p>
-      ) : (
-        <DataTable columns={columns} rows={data?.items ?? []} />
-      )}
+      <DataTable
+        columns={columns}
+        rows={data?.items ?? []}
+        isLoading={isLoading}
+        loadingLabel="Loading notes..."
+        emptyIcon={FileText}
+        emptyTitle="No notes found"
+        emptyDescription={
+          search || semester || year || subjectId
+            ? "Try adjusting your search or filters."
+            : "Notes uploaded by staff will appear here."
+        }
+      />
 
       {data && (
         <PaginationControls

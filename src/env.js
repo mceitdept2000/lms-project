@@ -12,7 +12,9 @@ export const env = createEnv({
         ? z.string()
         : z.string().optional(),
     DATABASE_URL: z.string().url(),
-    UPLOADS_DIR: z.string().default("./uploads"),
+    SUPABASE_URL: z.string().url(),
+    SUPABASE_SECRET_KEY: z.string(),
+    SUPABASE_STORAGE_BUCKET: z.string().default("files"),
     SEED_ADMIN_USERNAME: z.string().default("admin"),
     SEED_ADMIN_PASSWORD: z.string().optional(),
     NODE_ENV: z
@@ -36,7 +38,9 @@ export const env = createEnv({
   runtimeEnv: {
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
-    UPLOADS_DIR: process.env.UPLOADS_DIR,
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
+    SUPABASE_STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET,
     SEED_ADMIN_USERNAME: process.env.SEED_ADMIN_USERNAME,
     SEED_ADMIN_PASSWORD: process.env.SEED_ADMIN_PASSWORD,
     NODE_ENV: process.env.NODE_ENV,

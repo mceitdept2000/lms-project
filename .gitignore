@@ -48,7 +48,4 @@ yarn-error.log*
 # prisma files
 generated/
 
-# local file storage
-/uploads/
-
 # DESIGN.md
