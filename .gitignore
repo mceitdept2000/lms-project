@@ -44,3 +44,11 @@ yarn-error.log*
 
 # idea files
 .idea
+
+# prisma files
+generated/
+
+# local file storage
+/uploads/
+
+# DESIGN.md

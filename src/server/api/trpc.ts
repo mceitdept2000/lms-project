@@ -11,6 +11,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
+import type { Permission } from "~/lib/constants";
 import { auth } from "~/server/better-auth";
 import { db } from "~/server/db";
 
@@ -132,3 +133,19 @@ export const protectedProcedure = t.procedure
       },
     });
   });
+
+/**
+ * Permission-gated procedure. Builds on `protectedProcedure`, additionally
+ * requiring the session user to hold the given permission.
+ */
+const permissionProcedure = (permission: Permission) =>
+  protectedProcedure.use(({ ctx, next }) => {
+    if (!ctx.session.user.permissions.includes(permission)) {
+      throw new TRPCError({ code: "FORBIDDEN" });
+    }
+    return next();
+  });
+
+export const uploadProcedure = permissionProcedure("UPLOAD_FILES");
+export const manageUsersProcedure = permissionProcedure("MANAGE_USERS");
+export const manageCatalogProcedure = permissionProcedure("MANAGE_CATALOG");

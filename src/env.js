@@ -8,12 +8,15 @@ export const env = createEnv({
    */
   server: {
     BETTER_AUTH_SECRET:
-      process.env.NODE_ENV === "production" ? z.string() : z.string().optional(),
-    BETTER_AUTH_GITHUB_CLIENT_ID: z.string(),
-    BETTER_AUTH_GITHUB_CLIENT_SECRET: z.string(),
+      process.env.NODE_ENV === "production"
+        ? z.string()
+        : z.string().optional(),
     DATABASE_URL: z.string().url(),
+    UPLOADS_DIR: z.string().default("./uploads"),
+    SEED_ADMIN_USERNAME: z.string().default("admin"),
+    SEED_ADMIN_PASSWORD: z.string().optional(),
     NODE_ENV: z
-      .enum(["development", "test", "production"]) 
+      .enum(["development", "test", "production"])
       .default("development"),
   },
 
@@ -32,9 +35,10 @@ export const env = createEnv({
    */
   runtimeEnv: {
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
-    BETTER_AUTH_GITHUB_CLIENT_ID: process.env.BETTER_AUTH_GITHUB_CLIENT_ID,
-    BETTER_AUTH_GITHUB_CLIENT_SECRET: process.env.BETTER_AUTH_GITHUB_CLIENT_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
+    UPLOADS_DIR: process.env.UPLOADS_DIR,
+    SEED_ADMIN_USERNAME: process.env.SEED_ADMIN_USERNAME,
+    SEED_ADMIN_PASSWORD: process.env.SEED_ADMIN_PASSWORD,
     NODE_ENV: process.env.NODE_ENV,
   },
   /**

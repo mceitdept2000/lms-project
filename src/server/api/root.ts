@@ -1,3 +1,9 @@
+import { dashboardRouter } from "~/server/api/routers/dashboard";
+import { examRouter } from "~/server/api/routers/exam";
+import { noteRouter } from "~/server/api/routers/note";
+import { questionPaperRouter } from "~/server/api/routers/questionPaper";
+import { subjectRouter } from "~/server/api/routers/subject";
+import { userRouter } from "~/server/api/routers/user";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -5,7 +11,14 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  *
  * All routers added in /api/routers should be manually added here.
  */
-export const appRouter = createTRPCRouter({});
+export const appRouter = createTRPCRouter({
+  user: userRouter,
+  subject: subjectRouter,
+  exam: examRouter,
+  note: noteRouter,
+  questionPaper: questionPaperRouter,
+  dashboard: dashboardRouter,
+});
 
 // export type definition of API
 export type AppRouter = typeof appRouter;

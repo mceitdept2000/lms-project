@@ -8,7 +8,7 @@
     "resolveJsonModule": true,
     "moduleDetection": "force",
     "isolatedModules": true,
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "verbatimModuleSyntax": true,
     /* Strictness */
     "strict": true,

@@ -7,8 +7,8 @@ import { SiteHeader } from "~/app/_components/site-header";
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
-  title: "LMS",
-  description: "Notes and question paper repository",
+  title: "MCE LMS",
+  description: "MCE Notes and question paper repository",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

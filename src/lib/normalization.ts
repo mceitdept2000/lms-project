@@ -25,10 +25,7 @@ export function validateExamCode(code: string, type: ExamType): boolean {
  * ENDSEM fully expands the session ("April May 2024"); IAT/ASGT keep the
  * session+year prefix verbatim and only expand the exam kind, exactly as spec'd.
  */
-export function examNameFromCode(
-  code: string,
-  type: ExamType,
-): string | null {
+export function examNameFromCode(code: string, type: ExamType): string | null {
   const match = EXAM_CODE_PATTERNS[type].exec(code);
   if (!match) return null;
 

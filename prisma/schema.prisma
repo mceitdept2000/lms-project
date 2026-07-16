@@ -15,31 +15,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  createdBy   User   @relation(fields: [createdById], references: [id])
-  createdById String
-
-  @@index([name])
-}
-
 model User {
-  id            String    @id
-  name          String //@db.Text
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String? //@db.Text
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  posts         Post[]
+  id              String    @id
+  name            String //@db.Text
+  email           String
+  emailVerified   Boolean   @default(false)
+  image           String? //@db.Text
+  username        String? //@db.Text
+  displayUsername String? //@db.Text
+  permissions     String[]  @default([])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+  sessions        Session[]
+  accounts        Account[]
 
   @@unique([email])
+  @@unique([username])
   @@map("user")
 }
 
@@ -86,4 +77,80 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+// LMS schema, per DESIGN.md ## Database Design
+
+enum ExamType {
+  ENDSEM
+  IAT
+  ASGT
+}
+
+model Subject {
+  id         String   @id @default(uuid())
+  code       String
+  longName   String
+  shortName  String
+  year       String
+  semester   String
+  regulation String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  notes          Note[]
+  questionPapers QuestionPaper[]
+
+  @@unique([code, regulation])
+  @@index([semester])
+  @@index([year])
+  @@map("subject")
+}
+
+model Exam {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  type      ExamType
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  questionPapers QuestionPaper[]
+
+  @@map("exam")
+}
+
+model Note {
+  id          String    @id @default(uuid())
+  title       String
+  subjectId   String
+  subject     Subject   @relation(fields: [subjectId], references: [id])
+  unit        String?
+  storagePath String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([subjectId])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("note")
+}
+
+model QuestionPaper {
+  id          String    @id @default(uuid())
+  subjectId   String
+  subject     Subject   @relation(fields: [subjectId], references: [id])
+  examId      String
+  exam        Exam      @relation(fields: [examId], references: [id])
+  storagePath String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([subjectId])
+  @@index([examId])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("question_paper")
 }
