@@ -8,10 +8,11 @@ import {
 } from "~/lib/constants";
 import {
   createTRPCRouter,
+  protectedProcedure,
   publicProcedure,
   uploadProcedure,
 } from "~/server/api/trpc";
-import { storage } from "~/server/storage";
+import { resolveThumbnailPath, storage } from "~/server/storage";
 
 export const questionPaperRouter = createTRPCRouter({
   list: publicProcedure
@@ -111,9 +112,12 @@ export const questionPaperRouter = createTRPCRouter({
         subjectId: z.string(),
         examId: z.string(),
         storagePath: z.string(),
+        thumbnailPath: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const { thumbnailPath, ...rest } = input;
+
       if (!input.storagePath.startsWith("question-papers/")) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -126,7 +130,36 @@ export const questionPaperRouter = createTRPCRouter({
           message: "File was not uploaded.",
         });
       }
-      return ctx.db.questionPaper.create({ data: input });
+
+      return ctx.db.questionPaper.create({
+        data: {
+          ...rest,
+          thumbnailPath: await resolveThumbnailPath(
+            "question-papers",
+            thumbnailPath,
+          ),
+        },
+      });
+    }),
+
+  /** Backfills a thumbnail for a question paper uploaded before thumbnails existed. */
+  setThumbnail: protectedProcedure
+    .input(z.object({ id: z.string(), thumbnailPath: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const thumbnailPath = await resolveThumbnailPath(
+        "question-papers",
+        input.thumbnailPath,
+      );
+      if (!thumbnailPath) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Thumbnail was not uploaded.",
+        });
+      }
+      await ctx.db.questionPaper.updateMany({
+        where: { id: input.id, thumbnailPath: null },
+        data: { thumbnailPath },
+      });
     }),
 
   softDelete: uploadProcedure

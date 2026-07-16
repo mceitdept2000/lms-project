@@ -1,6 +1,7 @@
 "use client";
 
 import { FileQuestion } from "lucide-react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { CardGrid } from "~/app/_components/card-grid";
@@ -14,19 +15,41 @@ import {
   REGULATIONS,
   type Regulation,
 } from "~/lib/constants";
+import { useIsMobile } from "~/hooks/use-is-mobile";
+import { usePdfThumbnail } from "~/hooks/use-pdf-thumbnail";
 import { type RouterOutputs, api } from "~/trpc/react";
 
 type QuestionPaperRow = RouterOutputs["questionPaper"]["list"]["items"][number];
 
 function QuestionPaperCard({ paper }: { paper: QuestionPaperRow }) {
+  const thumbnailPath = usePdfThumbnail({
+    id: paper.id,
+    kind: "question-papers",
+    storagePath: paper.storagePath,
+    thumbnailPath: paper.thumbnailPath,
+  });
+
   return (
-    <div className="border-accent/30 hover:border-primary/50 flex h-full flex-col gap-3 rounded-[8px] border p-4 transition-colors">
+    <div className="border-accent/30 hover:border-primary/50 flex h-full flex-col gap-3 overflow-hidden rounded-[8px] border p-4 transition-colors">
+      {thumbnailPath && (
+        <div className="bg-accent/5 relative -mx-4 -mt-4 h-64 overflow-hidden rounded-t-[8px] sm:h-40">
+          <Image
+            src={`/api/files/${thumbnailPath}`}
+            alt=""
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover object-top"
+          />
+        </div>
+      )}
       <div className="flex items-start gap-3">
-        <FileQuestion
-          className="text-primary mt-0.5 shrink-0"
-          size={20}
-          aria-hidden="true"
-        />
+        {!thumbnailPath && (
+          <FileQuestion
+            className="text-primary mt-0.5 shrink-0"
+            size={20}
+            aria-hidden="true"
+          />
+        )}
         <div className="min-w-0">
           <p className="line-clamp-2 font-semibold">{paper.exam.name}</p>
           <p className="text-accent text-sm">{paper.exam.code}</p>
@@ -63,7 +86,10 @@ export function QuestionPapersBrowser() {
   const pageSize = Number(
     searchParams.get("pageSize") ?? String(DEFAULT_PAGE_SIZE),
   );
-  const view = (searchParams.get("view") as ViewMode | null) ?? "list";
+  const isMobile = useIsMobile();
+  const view =
+    (searchParams.get("view") as ViewMode | null) ??
+    (isMobile ? "grid" : "list");
 
   const { data: exams, isLoading: examsLoading } = api.exam.list.useQuery();
   const { data: subjects, isLoading: subjectsLoading } =
@@ -122,7 +148,7 @@ export function QuestionPapersBrowser() {
       >
         <button
           type="button"
-          className="border-accent rounded-[8px] border px-3 py-2 text-sm"
+          className="border-accent rounded-[8px] border px-3 py-2.5 text-sm"
           onClick={() =>
             setParams({ sortDir: sortDir === "desc" ? "asc" : "desc" })
           }

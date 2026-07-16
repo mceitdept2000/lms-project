@@ -6,7 +6,6 @@ import { useState } from "react";
 import { Combobox } from "~/app/_components/ui/combobox";
 import { Modal } from "~/app/_components/ui/modal";
 import { ProgressBar } from "~/app/_components/ui/progress-bar";
-import { env } from "~/env";
 import {
   ALL_UNITS,
   ALLOWED_MIME_TYPES,
@@ -15,41 +14,9 @@ import {
   type AllowedMimeType,
   type FileKind,
 } from "~/lib/constants";
+import { renderPdfFirstPageToBlob } from "~/lib/pdf-thumbnail";
+import { uploadToSignedUrl } from "~/lib/storage-upload";
 import { api } from "~/trpc/react";
-
-/** Uploads straight to Supabase Storage via a short-lived signed URL, bypassing the app server. */
-function uploadToSignedUrl(
-  signedUrl: string,
-  file: File,
-  onProgress: (percent: number) => void,
-) {
-  return new Promise<void>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", signedUrl);
-    xhr.setRequestHeader("apikey", env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
-    xhr.setRequestHeader(
-      "Authorization",
-      `Bearer ${env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}`,
-    );
-    xhr.setRequestHeader("content-type", file.type);
-    xhr.setRequestHeader("cache-control", "max-age=3600");
-    xhr.setRequestHeader("x-upsert", "false");
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        onProgress(Math.round((e.loaded / e.total) * 100));
-      }
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
-      } else {
-        reject(new Error("Upload failed"));
-      }
-    };
-    xhr.onerror = () => reject(new Error("Upload failed"));
-    xhr.send(file);
-  });
-}
 
 export function FileUploadForm() {
   const [open, setOpen] = useState(false);
@@ -107,11 +74,27 @@ export function FileUploadForm() {
     setPending(true);
     setProgress(0);
     try {
-      const { key, signedUrl } = await createSignedUrl.mutateAsync({
+      const { key, signedUrl, thumbnail } = await createSignedUrl.mutateAsync({
         kind,
         contentType: file.type as AllowedMimeType,
       });
-      await uploadToSignedUrl(signedUrl, file, setProgress);
+
+      let thumbnailPath: string | undefined;
+      const thumbnailPromise = thumbnail
+        ? renderPdfFirstPageToBlob(file)
+            .then((blob) =>
+              blob ? uploadToSignedUrl(thumbnail.signedUrl, blob) : undefined,
+            )
+            .then(() => {
+              thumbnailPath = thumbnail.key;
+            })
+            .catch(() => undefined)
+        : Promise.resolve();
+
+      await Promise.all([
+        uploadToSignedUrl(signedUrl, file, setProgress),
+        thumbnailPromise,
+      ]);
 
       if (kind === "notes") {
         await createNote.mutateAsync({
@@ -119,12 +102,14 @@ export function FileUploadForm() {
           subjectId,
           unit: unit as (typeof UNITS)[number] | typeof ALL_UNITS,
           storagePath: key,
+          thumbnailPath,
         });
       } else {
         await createQuestionPaper.mutateAsync({
           subjectId,
           examId,
           storagePath: key,
+          thumbnailPath,
         });
       }
 

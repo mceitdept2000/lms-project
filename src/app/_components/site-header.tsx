@@ -25,7 +25,7 @@ export function SiteHeader() {
           <span className="text-primary text-lg font-bold">MCE LMS</span>
         </Link>
 
-        <nav className="flex items-center gap-4 text-sm">
+        <nav className="hidden items-center gap-4 text-sm md:flex">
           <Link href="/notes">Notes</Link>
           <Link href="/question-papers">Question Papers</Link>
           {session?.user ? (

@@ -1,6 +1,7 @@
 "use client";
 
 import { FileText } from "lucide-react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { CardGrid } from "~/app/_components/card-grid";
@@ -16,19 +17,41 @@ import {
   type Semester,
   type Year,
 } from "~/lib/constants";
+import { useIsMobile } from "~/hooks/use-is-mobile";
+import { usePdfThumbnail } from "~/hooks/use-pdf-thumbnail";
 import { type RouterOutputs, api } from "~/trpc/react";
 
 type NoteRow = RouterOutputs["note"]["list"]["items"][number];
 
 function NoteCard({ note }: { note: NoteRow }) {
+  const thumbnailPath = usePdfThumbnail({
+    id: note.id,
+    kind: "notes",
+    storagePath: note.storagePath,
+    thumbnailPath: note.thumbnailPath,
+  });
+
   return (
-    <div className="border-accent/30 hover:border-primary/50 flex h-full flex-col gap-3 rounded-[8px] border p-4 transition-colors">
+    <div className="border-accent/30 hover:border-primary/50 flex h-full flex-col gap-3 overflow-hidden rounded-[8px] border p-4 transition-colors">
+      {thumbnailPath && (
+        <div className="bg-accent/5 relative -mx-4 -mt-4 h-64 overflow-hidden rounded-t-[8px] sm:h-40">
+          <Image
+            src={`/api/files/${thumbnailPath}`}
+            alt=""
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover object-top"
+          />
+        </div>
+      )}
       <div className="flex items-start gap-3">
-        <FileText
-          className="text-primary mt-0.5 shrink-0"
-          size={20}
-          aria-hidden="true"
-        />
+        {!thumbnailPath && (
+          <FileText
+            className="text-primary mt-0.5 shrink-0"
+            size={20}
+            aria-hidden="true"
+          />
+        )}
         <div className="min-w-0">
           <p className="line-clamp-2 font-semibold">{note.title}</p>
           <p className="text-accent text-sm">
@@ -64,7 +87,10 @@ export function NotesBrowser() {
   const pageSize = Number(
     searchParams.get("pageSize") ?? String(DEFAULT_PAGE_SIZE),
   );
-  const view = (searchParams.get("view") as ViewMode | null) ?? "list";
+  const isMobile = useIsMobile();
+  const view =
+    (searchParams.get("view") as ViewMode | null) ??
+    (isMobile ? "grid" : "list");
 
   const { data: subjects, isLoading: subjectsLoading } =
     api.subject.list.useQuery();
@@ -124,7 +150,7 @@ export function NotesBrowser() {
       >
         <button
           type="button"
-          className="border-accent rounded-[8px] border px-3 py-2 text-sm"
+          className="border-accent rounded-[8px] border px-3 py-2.5 text-sm"
           onClick={() =>
             setParams({
               sortDir: sortDir === "desc" ? "asc" : "desc",

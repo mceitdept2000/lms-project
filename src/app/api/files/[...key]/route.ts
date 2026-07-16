@@ -4,7 +4,8 @@ import { EXT_TO_MIME } from "~/lib/constants";
 import { db } from "~/server/db";
 import { storage } from "~/server/storage";
 
-const KEY_PATTERN = /^(notes|question-papers)\/[0-9a-f-]{36}\.(pdf|docx|doc)$/;
+const KEY_PATTERN =
+  /^(notes|question-papers)\/[0-9a-f-]{36}\.(pdf|docx|doc|png)$/;
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9 _.-]/g, "_");
@@ -22,11 +23,14 @@ export async function GET(
 
   const ext = key.split(".").pop()!;
   const [kind] = key.split("/");
+  const isThumbnail = ext === "png";
   let filenameBase: string | undefined;
 
   if (kind === "notes") {
     const note = await db.note.findFirst({
-      where: { storagePath: key, deletedAt: null },
+      where: isThumbnail
+        ? { thumbnailPath: key, deletedAt: null }
+        : { storagePath: key, deletedAt: null },
       select: { title: true },
     });
     if (!note)
@@ -34,7 +38,9 @@ export async function GET(
     filenameBase = note.title;
   } else {
     const qp = await db.questionPaper.findFirst({
-      where: { storagePath: key, deletedAt: null },
+      where: isThumbnail
+        ? { thumbnailPath: key, deletedAt: null }
+        : { storagePath: key, deletedAt: null },
       select: {
         exam: { select: { code: true } },
         subject: { select: { code: true } },
@@ -49,9 +55,13 @@ export async function GET(
 
   return new NextResponse(file.stream, {
     headers: {
-      "Content-Type": EXT_TO_MIME[ext] ?? "application/octet-stream",
+      "Content-Type": isThumbnail
+        ? "image/png"
+        : (EXT_TO_MIME[ext] ?? "application/octet-stream"),
       "Content-Length": String(file.size),
-      "Content-Disposition": `attachment; filename="${sanitizeFilename(filenameBase)}.${ext}"`,
+      "Content-Disposition": isThumbnail
+        ? `inline; filename="${sanitizeFilename(filenameBase)}.png"`
+        : `attachment; filename="${sanitizeFilename(filenameBase)}.${ext}"`,
     },
   });
 }
