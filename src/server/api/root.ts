@@ -3,6 +3,7 @@ import { examRouter } from "~/server/api/routers/exam";
 import { noteRouter } from "~/server/api/routers/note";
 import { questionPaperRouter } from "~/server/api/routers/questionPaper";
 import { subjectRouter } from "~/server/api/routers/subject";
+import { uploadRouter } from "~/server/api/routers/upload";
 import { userRouter } from "~/server/api/routers/user";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   note: noteRouter,
   questionPaper: questionPaperRouter,
   dashboard: dashboardRouter,
+  upload: uploadRouter,
 });
 
 // export type definition of API

@@ -28,7 +28,10 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    // Publishable (public) key — safe to expose in the browser. Used only to
+    // authenticate direct-to-storage uploads; actual write permission for a
+    // given upload comes from the short-lived signed token, not this key.
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string(),
   },
 
   /**
@@ -41,6 +44,8 @@ export const env = createEnv({
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
     SUPABASE_STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     SEED_ADMIN_USERNAME: process.env.SEED_ADMIN_USERNAME,
     SEED_ADMIN_PASSWORD: process.env.SEED_ADMIN_PASSWORD,
     NODE_ENV: process.env.NODE_ENV,

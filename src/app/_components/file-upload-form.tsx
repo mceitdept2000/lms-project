@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Combobox } from "~/app/_components/ui/combobox";
 import { Modal } from "~/app/_components/ui/modal";
 import { ProgressBar } from "~/app/_components/ui/progress-bar";
+import { env } from "~/env";
 import {
   ALL_UNITS,
   ALLOWED_MIME_TYPES,
@@ -16,42 +17,43 @@ import {
 } from "~/lib/constants";
 import { api } from "~/trpc/react";
 
-function uploadFile(
+/** Uploads straight to Supabase Storage via a short-lived signed URL, bypassing the app server. */
+function uploadToSignedUrl(
+  signedUrl: string,
   file: File,
-  kind: FileKind,
   onProgress: (percent: number) => void,
 ) {
-  return new Promise<{ storagePath: string }>((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/upload");
+    xhr.open("PUT", signedUrl);
+    xhr.setRequestHeader("apikey", env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+    xhr.setRequestHeader(
+      "Authorization",
+      `Bearer ${env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}`,
+    );
+    xhr.setRequestHeader("content-type", file.type);
+    xhr.setRequestHeader("cache-control", "max-age=3600");
+    xhr.setRequestHeader("x-upsert", "false");
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) {
         onProgress(Math.round((e.loaded / e.total) * 100));
       }
     };
     xhr.onload = () => {
-      let body: { storagePath?: string; error?: string } = {};
-      try {
-        body = JSON.parse(xhr.responseText) as typeof body;
-      } catch {
-        // ignore malformed response body, handled by the status/storagePath check below
-      }
-      if (xhr.status >= 200 && xhr.status < 300 && body.storagePath) {
-        resolve({ storagePath: body.storagePath });
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
       } else {
-        reject(new Error(body.error ?? "Upload failed"));
+        reject(new Error("Upload failed"));
       }
     };
     xhr.onerror = () => reject(new Error("Upload failed"));
-    const form = new FormData();
-    form.set("file", file);
-    form.set("kind", kind);
-    xhr.send(form);
+    xhr.send(file);
   });
 }
 
 export function FileUploadForm() {
   const [open, setOpen] = useState(false);
+  const utils = api.useUtils();
 
   const { data: subjects, isLoading: subjectsLoading } =
     api.subject.list.useQuery();
@@ -68,8 +70,13 @@ export function FileUploadForm() {
   const [pending, setPending] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const createNote = api.note.create.useMutation();
-  const createQuestionPaper = api.questionPaper.create.useMutation();
+  const createSignedUrl = api.upload.createSignedUrl.useMutation();
+  const createNote = api.note.create.useMutation({
+    onSuccess: () => utils.note.list.invalidate(),
+  });
+  const createQuestionPaper = api.questionPaper.create.useMutation({
+    onSuccess: () => utils.questionPaper.list.invalidate(),
+  });
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -100,20 +107,24 @@ export function FileUploadForm() {
     setPending(true);
     setProgress(0);
     try {
-      const body = await uploadFile(file, kind, setProgress);
+      const { key, signedUrl } = await createSignedUrl.mutateAsync({
+        kind,
+        contentType: file.type as AllowedMimeType,
+      });
+      await uploadToSignedUrl(signedUrl, file, setProgress);
 
       if (kind === "notes") {
         await createNote.mutateAsync({
           title,
           subjectId,
           unit: unit as (typeof UNITS)[number] | typeof ALL_UNITS,
-          storagePath: body.storagePath,
+          storagePath: key,
         });
       } else {
         await createQuestionPaper.mutateAsync({
           subjectId,
           examId,
-          storagePath: body.storagePath,
+          storagePath: key,
         });
       }
 
@@ -226,9 +237,7 @@ export function FileUploadForm() {
             <ProgressBar
               value={progress}
               label={
-                progress < 100
-                  ? `Uploading... ${progress}%`
-                  : "Finishing up..."
+                progress < 100 ? `Uploading... ${progress}%` : "Finishing up..."
               }
             />
           )}

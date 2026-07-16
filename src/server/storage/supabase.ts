@@ -34,4 +34,10 @@ export const supabaseStorage: StorageDriver = {
     const { data } = await bucket.exists(key);
     return data;
   },
+
+  async createSignedUploadUrl(key) {
+    const { data, error } = await bucket.createSignedUploadUrl(key);
+    if (error) throw error;
+    return { signedUrl: data.signedUrl, token: data.token };
+  },
 };
