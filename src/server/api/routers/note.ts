@@ -37,7 +37,40 @@ export const noteRouter = createTRPCRouter({
       const where = {
         deletedAt: null,
         ...(input.search
-          ? { title: { contains: input.search, mode: "insensitive" as const } }
+          ? {
+              OR: [
+                {
+                  title: {
+                    contains: input.search,
+                    mode: "insensitive" as const,
+                  },
+                },
+                {
+                  subject: {
+                    shortName: {
+                      contains: input.search,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                },
+                {
+                  subject: {
+                    longName: {
+                      contains: input.search,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                },
+                {
+                  subject: {
+                    code: {
+                      contains: input.search,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                },
+              ],
+            }
           : {}),
         subject: {
           ...(input.semester ? { semester: input.semester } : {}),

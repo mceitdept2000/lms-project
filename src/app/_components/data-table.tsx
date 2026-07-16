@@ -26,41 +26,51 @@ export function DataTable<T extends { id: string }>({
   emptyDescription?: string;
 }) {
   return (
-    <table className="w-full text-left text-sm">
-      <thead>
-        <tr>
-          {columns.map((col) => (
-            <th key={col.header}>{col.header}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {isLoading ? (
-          <tr>
-            <td colSpan={columns.length}>
-              <LoadingState label={loadingLabel} />
-            </td>
+    <div className="border-accent/30 overflow-x-auto rounded-[8px] border">
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="border-accent/30 border-b bg-primary/5">
+            {columns.map((col) => (
+              <th key={col.header} className="text-accent px-4 py-3 font-medium">
+                {col.header}
+              </th>
+            ))}
           </tr>
-        ) : rows.length === 0 ? (
-          <tr>
-            <td colSpan={columns.length}>
-              <EmptyState
-                icon={emptyIcon}
-                title={emptyTitle}
-                description={emptyDescription}
-              />
-            </td>
-          </tr>
-        ) : (
-          rows.map((row) => (
-            <tr key={row.id} data-row-id={row.id}>
-              {columns.map((col) => (
-                <td key={col.header}>{col.cell(row)}</td>
-              ))}
+        </thead>
+        <tbody className="divide-accent/15 divide-y">
+          {isLoading ? (
+            <tr>
+              <td colSpan={columns.length} className="p-0">
+                <LoadingState label={loadingLabel} />
+              </td>
             </tr>
-          ))
-        )}
-      </tbody>
-    </table>
+          ) : rows.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length} className="p-0">
+                <EmptyState
+                  icon={emptyIcon}
+                  title={emptyTitle}
+                  description={emptyDescription}
+                />
+              </td>
+            </tr>
+          ) : (
+            rows.map((row) => (
+              <tr
+                key={row.id}
+                data-row-id={row.id}
+                className="hover:bg-primary/5"
+              >
+                {columns.map((col) => (
+                  <td key={col.header} className="px-4 py-4">
+                    {col.cell(row)}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }

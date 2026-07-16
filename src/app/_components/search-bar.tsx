@@ -26,10 +26,10 @@ export function SearchBar({
   }, [draft]);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <input
         type="search"
-        className="border-accent flex-1 rounded-[8px] border px-3 py-2"
+        className="border-accent min-w-0 flex-1 rounded-[8px] border px-3 py-2"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         placeholder={placeholder}

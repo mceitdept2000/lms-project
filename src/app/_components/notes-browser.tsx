@@ -3,10 +3,12 @@
 import { FileText } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { CardGrid } from "~/app/_components/card-grid";
 import { DataTable, type DataTableColumn } from "~/app/_components/data-table";
 import { FilterSelect } from "~/app/_components/filter-select";
 import { PaginationControls } from "~/app/_components/pagination-controls";
 import { SearchBar } from "~/app/_components/search-bar";
+import { ViewToggle, type ViewMode } from "~/app/_components/view-toggle";
 import {
   DEFAULT_PAGE_SIZE,
   SEMESTERS,
@@ -17,6 +19,36 @@ import {
 import { type RouterOutputs, api } from "~/trpc/react";
 
 type NoteRow = RouterOutputs["note"]["list"]["items"][number];
+
+function NoteCard({ note }: { note: NoteRow }) {
+  return (
+    <div className="border-accent/30 hover:border-primary/50 flex h-full flex-col gap-3 rounded-[8px] border p-4 transition-colors">
+      <div className="flex items-start gap-3">
+        <FileText
+          className="text-primary mt-0.5 shrink-0"
+          size={20}
+          aria-hidden="true"
+        />
+        <div className="min-w-0">
+          <p className="line-clamp-2 font-semibold">{note.title}</p>
+          <p className="text-accent text-sm">
+            {note.subject.shortName} ({note.subject.code})
+          </p>
+        </div>
+      </div>
+      <div className="text-accent mt-auto flex items-center justify-between text-xs">
+        <span>Unit {note.unit && note.unit !== "-1" ? note.unit : "All"}</span>
+        <span>{new Date(note.createdAt).toLocaleDateString()}</span>
+      </div>
+      <a
+        className="border-accent text-primary hover:bg-primary/5 rounded-[8px] border px-3 py-2 text-center text-sm font-medium"
+        href={`/api/files/${note.storagePath}`}
+      >
+        Download
+      </a>
+    </div>
+  );
+}
 
 export function NotesBrowser() {
   const router = useRouter();
@@ -32,6 +64,7 @@ export function NotesBrowser() {
   const pageSize = Number(
     searchParams.get("pageSize") ?? String(DEFAULT_PAGE_SIZE),
   );
+  const view = (searchParams.get("view") as ViewMode | null) ?? "list";
 
   const { data: subjects, isLoading: subjectsLoading } =
     api.subject.list.useQuery();
@@ -87,7 +120,7 @@ export function NotesBrowser() {
       <SearchBar
         value={search}
         onChange={(v) => setParams({ search: v })}
-        placeholder="Search notes by title"
+        placeholder="Search notes by title or subject"
       >
         <button
           type="button"
@@ -100,6 +133,10 @@ export function NotesBrowser() {
         >
           Sort: {sortDir === "desc" ? "Newest" : "Oldest"}
         </button>
+        <ViewToggle
+          value={view}
+          onChange={(v) => setParams({ view: v, page })}
+        />
       </SearchBar>
 
       <div className="flex flex-wrap gap-4">
@@ -128,19 +165,35 @@ export function NotesBrowser() {
         />
       </div>
 
-      <DataTable
-        columns={columns}
-        rows={data?.items ?? []}
-        isLoading={isLoading}
-        loadingLabel="Loading notes..."
-        emptyIcon={FileText}
-        emptyTitle="No notes found"
-        emptyDescription={
-          search || semester || year || subjectId
-            ? "Try adjusting your search or filters."
-            : "Notes uploaded by staff will appear here."
-        }
-      />
+      {view === "grid" ? (
+        <CardGrid
+          items={data?.items ?? []}
+          renderCard={(note) => <NoteCard note={note} />}
+          isLoading={isLoading}
+          loadingLabel="Loading notes..."
+          emptyIcon={FileText}
+          emptyTitle="No notes found"
+          emptyDescription={
+            search || semester || year || subjectId
+              ? "Try adjusting your search or filters."
+              : "Notes uploaded by staff will appear here."
+          }
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={data?.items ?? []}
+          isLoading={isLoading}
+          loadingLabel="Loading notes..."
+          emptyIcon={FileText}
+          emptyTitle="No notes found"
+          emptyDescription={
+            search || semester || year || subjectId
+              ? "Try adjusting your search or filters."
+              : "Notes uploaded by staff will appear here."
+          }
+        />
+      )}
 
       {data && (
         <PaginationControls

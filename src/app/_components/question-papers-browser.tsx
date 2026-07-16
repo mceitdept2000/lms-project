@@ -3,10 +3,12 @@
 import { FileQuestion } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { CardGrid } from "~/app/_components/card-grid";
 import { DataTable, type DataTableColumn } from "~/app/_components/data-table";
 import { FilterSelect } from "~/app/_components/filter-select";
 import { PaginationControls } from "~/app/_components/pagination-controls";
 import { SearchBar } from "~/app/_components/search-bar";
+import { ViewToggle, type ViewMode } from "~/app/_components/view-toggle";
 import {
   DEFAULT_PAGE_SIZE,
   REGULATIONS,
@@ -15,6 +17,37 @@ import {
 import { type RouterOutputs, api } from "~/trpc/react";
 
 type QuestionPaperRow = RouterOutputs["questionPaper"]["list"]["items"][number];
+
+function QuestionPaperCard({ paper }: { paper: QuestionPaperRow }) {
+  return (
+    <div className="border-accent/30 hover:border-primary/50 flex h-full flex-col gap-3 rounded-[8px] border p-4 transition-colors">
+      <div className="flex items-start gap-3">
+        <FileQuestion
+          className="text-primary mt-0.5 shrink-0"
+          size={20}
+          aria-hidden="true"
+        />
+        <div className="min-w-0">
+          <p className="line-clamp-2 font-semibold">{paper.exam.name}</p>
+          <p className="text-accent text-sm">{paper.exam.code}</p>
+        </div>
+      </div>
+      <div className="text-accent text-sm">
+        {paper.subject.shortName} ({paper.subject.code}) &middot;{" "}
+        {paper.subject.regulation}
+      </div>
+      <div className="text-accent mt-auto flex items-center justify-end text-xs">
+        <span>{new Date(paper.createdAt).toLocaleDateString()}</span>
+      </div>
+      <a
+        className="border-accent text-primary hover:bg-primary/5 rounded-[8px] border px-3 py-2 text-center text-sm font-medium"
+        href={`/api/files/${paper.storagePath}`}
+      >
+        Download
+      </a>
+    </div>
+  );
+}
 
 export function QuestionPapersBrowser() {
   const router = useRouter();
@@ -30,6 +63,7 @@ export function QuestionPapersBrowser() {
   const pageSize = Number(
     searchParams.get("pageSize") ?? String(DEFAULT_PAGE_SIZE),
   );
+  const view = (searchParams.get("view") as ViewMode | null) ?? "list";
 
   const { data: exams, isLoading: examsLoading } = api.exam.list.useQuery();
   const { data: subjects, isLoading: subjectsLoading } =
@@ -95,6 +129,10 @@ export function QuestionPapersBrowser() {
         >
           Sort: {sortDir === "desc" ? "Newest" : "Oldest"}
         </button>
+        <ViewToggle
+          value={view}
+          onChange={(v) => setParams({ view: v, page })}
+        />
       </SearchBar>
 
       <div className="flex flex-wrap gap-4">
@@ -125,19 +163,35 @@ export function QuestionPapersBrowser() {
         />
       </div>
 
-      <DataTable
-        columns={columns}
-        rows={data?.items ?? []}
-        isLoading={isLoading}
-        loadingLabel="Loading question papers..."
-        emptyIcon={FileQuestion}
-        emptyTitle="No question papers found"
-        emptyDescription={
-          search || regulation || examCode || subjectCode
-            ? "Try adjusting your search or filters."
-            : "Question papers uploaded by staff will appear here."
-        }
-      />
+      {view === "grid" ? (
+        <CardGrid
+          items={data?.items ?? []}
+          renderCard={(paper) => <QuestionPaperCard paper={paper} />}
+          isLoading={isLoading}
+          loadingLabel="Loading question papers..."
+          emptyIcon={FileQuestion}
+          emptyTitle="No question papers found"
+          emptyDescription={
+            search || regulation || examCode || subjectCode
+              ? "Try adjusting your search or filters."
+              : "Question papers uploaded by staff will appear here."
+          }
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={data?.items ?? []}
+          isLoading={isLoading}
+          loadingLabel="Loading question papers..."
+          emptyIcon={FileQuestion}
+          emptyTitle="No question papers found"
+          emptyDescription={
+            search || regulation || examCode || subjectCode
+              ? "Try adjusting your search or filters."
+              : "Question papers uploaded by staff will appear here."
+          }
+        />
+      )}
 
       {data && (
         <PaginationControls
